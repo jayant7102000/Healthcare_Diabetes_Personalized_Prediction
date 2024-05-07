@@ -32,6 +32,28 @@ y = df.iloc[:, -1]
 x_train, x_test, y_train, y_test = train_test_split(x,y, test_size = 0.2, random_state = 0)
 
 
+# ##Chossing the best algorithm 
+# classifier={
+#    "Random FOrest": RandomForestClassifier(),
+#    "Logistic Regression": LogisticRegression(),
+#    "Gradient Boosting": GradientBoostingClassifier(),
+#    "Support Vector Machine": SVC(),
+#    "K-Nearest Neighbors":KNeighborsClassifier(),
+# }
+
+# best_classifier=None
+# best_accuracy=0
+# for name,classifier in classifier.items():
+#    classifier.fit(x_train,y_train)
+#    y_pred=classifier.predict(x_test)
+#    accuracy=accuracy_score(y_test,y_pred)
+#    if accuracy>best_accuracy:
+#       best_accuracy=accuracy
+#       best_classifier=classifier
+# print(best_classifier)
+
+
+
 # FUNCTION
 def user_report():
   pregnancies = st.sidebar.slider('Pregnancies', 0,17, 3 )
@@ -65,10 +87,13 @@ st.subheader('Patient Data')
 st.write(user_data)
 
 
-# MODEL
+# # MODEL
 rf  = RandomForestClassifier()
 rf.fit(x_train, y_train)
 user_result = rf.predict(user_data)
+
+
+
 
 
 
@@ -165,12 +190,49 @@ st.pyplot(fig_dpf)
 
 
 # OUTPUT
+# st.subheader('Your Report: ')
+# output=''
+# if user_result[0]==0:
+#   output = 'You are not Diabetic'
+# else:
+#   output = 'You are Diabetic'
+# st.title(output)
+# st.subheader('Accuracy: ')
+# st.write(str(accuracy_score(y_test, rf.predict(x_test))*100)+'%')
 st.subheader('Your Report: ')
-output=''
-if user_result[0]==0:
-  output = 'You are not Diabetic'
+output = ''
+if user_result[0] == 0:
+    output = 'You are not Diabetic'
 else:
-  output = 'You are Diabetic'
+    output = 'You are Diabetic'
+    st.write("Based on the information provided, you are diabetic. Here's your personalized risk assessment:")
+    # Predict probability of diabetes
+    proba = rf.predict_proba(user_data)
+    # Extract probability of being diabetic
+    prob_diabetic = proba[0][1]
+    # Provide dynamic risk assessment based on probability
+    if prob_diabetic < 0.3:
+        st.write("Your risk of being diabetic is low.")
+    elif prob_diabetic < 0.7:
+        st.write("Your risk of being diabetic is moderate.")
+    else:
+        st.write("Your risk of being diabetic is high.")
+    
+    # Explain contributing factors based on feature values
+    st.write("Here are some factors contributing to your diabetes:")
+    # Get feature values provided by the user
+    user_values = user_data.iloc[0]
+    # Get feature importance from the trained model
+    feature_importance = pd.Series(rf.feature_importances_, index=x.columns)
+    # Sort feature importance in descending order
+    sorted_features = feature_importance.sort_values(ascending=False)
+    # Select top contributing factors
+    top_factors = sorted_features.head(3)
+    # Check if user values are higher than median for top contributing factors
+    for factor, importance in top_factors.items():
+        if user_values[factor] > np.median(df[factor]):
+            st.write(f"- High {factor} ({user_values[factor]}), contributing factor: {importance:.2f}")
+    
 st.title(output)
 st.subheader('Accuracy: ')
 st.write(str(accuracy_score(y_test, rf.predict(x_test))*100)+'%')
